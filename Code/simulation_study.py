@@ -24,10 +24,7 @@ tfpl = tfp.layers
 tfd = tfp.distributions
 
 
-# ## Prior mean calibration
-
-# In[5]:
-
+### Prior mean calibration
 
 class Network:
     def __init__(self, layers):
@@ -42,10 +39,6 @@ class Network:
         outputs = tf.keras.layers.Dense(num_outputs)(x)
 
         return tf.keras.models.Model(inputs=inputs, outputs=outputs)
-
-
-# In[7]:
-
 
 class GradientLayer(tf.keras.layers.Layer):
     def __init__(self,model,**kwargs):
@@ -94,15 +87,10 @@ class PINN:
             u_bnd = self.network(xt_bnd)
             return tf.keras.models.Model(inputs=[xt_eqn, xt_ini, xt_bnd], outputs=[u_eqn, u_ini, u_bnd])
 
-
-# In[8]:
-
-
+# optimizer to find the prior means
 class L_BFGS_B:
 
     def __init__(self, model, x_train, u_train, maxiter, factr=1e7, m=50, maxls=50):
-
-        # set attributes
         self.model = model
         self.x_train = [ tf.constant(x, dtype=tf.float32) for x in x_train ]
         self.u_train = [ tf.constant(u, dtype=tf.float32) for u in u_train ]
@@ -116,17 +104,11 @@ class L_BFGS_B:
             count_mode='steps', stateful_metrics=self.metrics)
         self.progbar.set_params( {
             'verbose':1, 'epochs':1, 'steps':self.maxiter, 'metrics':self.metrics})
-
     def set_weights(self, flat_weights):
-        
-        # get model weights
         shapes = [ w.shape for w in self.model.get_weights() ]
-        # compute splitting indices
         split_ids = np.cumsum([ np.prod(shape) for shape in [0] + shapes ])
-        # reshape weights
         weights = [ flat_weights[from_id:to_id].reshape(shape)
             for from_id, to_id, shape in zip(split_ids[:-1], split_ids[1:], shapes) ]
-        # set weights to the model
         self.model.set_weights(weights)
 
     @tf.function
@@ -137,29 +119,20 @@ class L_BFGS_B:
         return loss, grads
 
     def evaluate(self, weights):
-
-        # update weights
         self.set_weights(weights)
-        # compute loss and gradients for weights
         loss, grads = self.tf_evaluate(self.x_train, self.u_train)
-        # convert tf.Tensor to flatten ndarray
         loss = loss.numpy().astype('float64')
         grads = np.concatenate([ g.numpy().flatten() for g in grads ]).astype('float64')
-
         return loss, grads
 
     def callback(self, weights):
-
         self.progbar.on_batch_begin(0)
         loss, _ = self.evaluate(weights)
         self.progbar.on_batch_end(0, logs=dict(zip(self.metrics, [loss])))
 
     def fit(self):
-
-        # get initial weights as a flat vector
         initial_weights = np.concatenate(
             [ w.flatten() for w in self.model.get_weights() ])
-        # optimize the weight vector
         print('Optimizer: L-BFGS-B (maxiter={})'.format(self.maxiter))
         self.progbar.on_train_begin()
         self.progbar.on_epoch_begin(1)
@@ -170,9 +143,6 @@ class L_BFGS_B:
         self.progbar.on_train_end()
 
 
-# In[9]:
-
-
 class TrainingData:
     def __init__(self, n_init, n_bnd, cosine):
         self.n_init = n_init
@@ -180,9 +150,7 @@ class TrainingData:
         self.cosine = cosine
 
     def get_training_data(self):
-
         xt_eqn = np.array(np.meshgrid(np.linspace(-1, 1, self.n_bnd), np.linspace(0, 2, self.n_init))).T.reshape(-1,2)
-
         xt_ini = np.array(np.meshgrid(np.linspace(-1, 1, self.n_bnd), np.array([0]))).T.reshape(-1,2)
         xt_ini = np.tile(xt_ini, (self.n_init, 1))
 
@@ -210,16 +178,11 @@ class TrainingData:
         return {'x_train': x_train, 'u_train': u_train}
 
 
-# In[14]:
-
-
 def prior_training(layers, n_init, n_bnd, nu, u_true, cosine, maxiter):
-
     keras.utils.set_random_seed(1)
 
     network = Network(layers)
     NN = network.get_network()
-
     pinn = PINN(network=NN, nu=nu, cosine=cosine).build()
     training_data = TrainingData(n_init=n_init, n_bnd=n_bnd, cosine=cosine).get_training_data()
     lbfgs = L_BFGS_B(model=pinn, x_train=training_data['x_train'], u_train=training_data['u_train'], maxiter=maxiter)
@@ -231,9 +194,6 @@ def prior_training(layers, n_init, n_bnd, nu, u_true, cosine, maxiter):
         weights.append(temp)
 
     return weights
-
-
-# In[40]:
 
 
 layers = [10,10,10,10]
@@ -252,15 +212,13 @@ u_true = u_base
 prior_means = prior_training(layers=layers, n_init=n_init, n_bnd=n_bnd, nu=nu, u_true=u_true, cosine=cosine, maxiter=maxiter)
 
 
-# ## Bayesian Update
+### Bayesian Update
 
-# In[41]:
 def posterior(kernel_size, bias_size, dtype=None):
     num = kernel_size + bias_size
     return tf.keras.Sequential([
         tfpl.VariableLayer(tfpl.IndependentNormal.params_size(num), dtype=dtype),
         tfpl.IndependentNormal(num)])
-
 
 
 def bayesian_network(layers, kl_w, prior_means, prior_sd, phys_informed, num_inputs=2, num_outputs=1):
@@ -309,9 +267,6 @@ def bayesian_network(layers, kl_w, prior_means, prior_sd, phys_informed, num_inp
     return tf.keras.Model(inputs=inputs, outputs=outputs)
 
 
-# In[30]:
-
-
 def negative_loglikelihood(true_dist, estimated_dist):
     return -estimated_dist.log_prob(true_dist)
 
@@ -319,7 +274,6 @@ def bayesian_update(n_update, batch_size, prior_means, prior_sd, lr, iters, phys
     start_time = time.time()
 
     kl_w = n_update / batch_size
-    
     bnn = bayesian_network(layers, kl_w, prior_means, prior_sd, phys_informed)
     
     # adding noise to the true solution
