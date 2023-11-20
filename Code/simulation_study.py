@@ -368,7 +368,7 @@ np.random.seed(seed)
 dict_seeds = {}
 
 
-for seed in range(1,2):
+for seed in range(1,101):
     random.seed(seed)
     np.random.seed(seed) 
     keras.utils.set_random_seed(seed)
@@ -379,7 +379,3 @@ for seed in range(1,2):
     phys_informed = False
     temp_npi = bayesian_update(n_update, batch_size, prior_means, prior_sd, lr, iters, physics_noise, u_true, seed, phys_informed, t0, t1, x_list_id)
     dict_seeds[f'seed_{seed}'] = {'pi': temp_pi, 'npi': temp_npi}
-
-with open('dict_seeds2.pkl', 'wb') as f:
-    pickle.dump(dict_seeds, f)
-
