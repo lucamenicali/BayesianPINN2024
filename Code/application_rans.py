@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[3]:
-
-
 import os
 import tensorflow as tf
 import keras 
@@ -32,21 +26,15 @@ tfpl = tfp.layers
 tfd = tfp.distributions
 
 
-# In[4]:
+with open('ubar.pkl', 'rb') as f:
+    ubar = pickle.load(f)
+with open('vbar.pkl', 'rb') as f:
+    vbar = pickle.load(f)
+with open('uvbar.pkl', 'rb') as f:
+    uvbar = pickle.load(f)
+with open('u1000.pkl', 'rb') as f:
+    u1000 = pickle.load(f)
 
-
-with open('u.pkl', 'rb') as f:
-    u = pickle.load(f)
-with open('v.pkl', 'rb') as f:
-    v = pickle.load(f)
-
-
-# In[5]:
-
-
-ubar = u.mean(axis=2)
-vbar = v.mean(axis=2)
-uvbar = (u*v).mean(axis=2) - ubar*vbar
 
 xx = np.loadtxt('xgrid.txt')
 yy = np.loadtxt('ygrid.txt')
@@ -79,7 +67,7 @@ for i in range(5):
     y_dots_temp = np.random.choice(len(yspace), n_y, replace=False)
     y_dots.append(y_dots_temp)
 
-im = ax[0].imshow(u[:,:,999], extent=[xspace[0], xspace[-1], yspace[0], yspace[-1]],\
+im = ax[0].imshow(u1000, extent=[xspace[0], xspace[-1], yspace[0], yspace[-1]],\
                 cmap=cmap, interpolation='nearest', origin='lower', aspect='auto', vmin=vmin, vmax=vmax)
 #ax[0].set_title(r'$u(x,y,1000)$', fontsize=20)
 ax[0].set_xlabel(r'$x$ (length of the PIV measurement window, in $m$)', fontsize=16)
