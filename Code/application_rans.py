@@ -485,14 +485,14 @@ def bayesian_network(layers, kl_w, prior_means, prior_sd, phys_informed, num_inp
     keys = [str(i) for i in keys]
 
     x = tfpl.DenseVariational(units=layers[0], input_shape=(num_inputs,), make_posterior_fn=posterior_mean_field, make_prior_fn=my_priors['p0'],
-                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=False)(x) 
+                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=True)(x) 
     
     for i, k in enumerate(keys[1:-1]):
         x = tfpl.DenseVariational(units=layers[i], make_posterior_fn=posterior_mean_field, make_prior_fn=my_priors[k],
-                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=False)(x)
+                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=True)(x)
     
     x = tfpl.DenseVariational(units=num_outputs, make_posterior_fn=posterior_mean_field, make_prior_fn=my_priors[keys[-1]],
-                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=False)(x) 
+                                    kl_weight=1/kl_w, activation='tanh', kl_use_exact=True)(x) 
     
     distribution_params = tf.keras.layers.Dense(units=num_outputs*2, use_bias=False)(x)
     outputs = tfp.layers.IndependentNormal(num_outputs, validate_args=True)(distribution_params)
