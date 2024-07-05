@@ -401,6 +401,7 @@ ny = ubar.shape[0]
 layers = [10,10]
 maxiter = 10000
 factr = 1
+tf.keras.utils.set_random_seed(1)
 
 nn, pinn, xy_train, u_train = train_ns_priors(delta=delta, u_tau=u_tau, nu=nu, kappa=kappa, layers=layers,\
                                             x0=x0, x1=x1, y0=y0, y1=y1, u0=u0, nx=nx, ny=ny, maxiter=maxiter, factr=factr)
