@@ -295,7 +295,7 @@ class L_BFGS_B:
     @tf.function
     def tf_evaluate(self, x, y):
         with tf.GradientTape() as g:
-            loss = tf.reduce_mean(tf.keras.losses.logcosh(self.model(x), y))
+            loss = tf.reduce_mean(tf.keras.losses.mse(self.model(x), y))
         grads = g.gradient(loss, self.model.trainable_variables)
         return loss, grads
 
