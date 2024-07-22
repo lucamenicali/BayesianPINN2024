@@ -1,4 +1,4 @@
-# BayesianPINN2023
+# BayesianPINN2024
 
 Supplemental codes for "Physics-Informed Priors with Application to Turbulent Boundary Layer Velocity" by Luca Menicali, David H. Richter and Stefano Castruccio.
 
